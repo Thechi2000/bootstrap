@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::process::Command;
 
 use fltk::{app, prelude::*, window::Window};
 use fltk::misc::Progress;
@@ -53,4 +54,6 @@ async fn main() {
             _ => {}
         }
     }
+
+    Command::new(format!("./{}", env!("EXECUTABLE_NAME"))).spawn().expect("Could not start application");
 }
