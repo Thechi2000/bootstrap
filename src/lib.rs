@@ -66,7 +66,7 @@ pub fn scan_dir(path: PathBuf) -> Result<Vec<PathBuf>, Error> {
                     .collect())
     } else {
         Ok(Vec::from([path]))
-    }
+    }.map(|v| v.into_iter().filter(|p| p.is_file()).collect())
 }
 
 pub fn init_logger() -> Result<(), SetLoggerError> {
