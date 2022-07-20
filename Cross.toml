@@ -1,0 +1,5 @@
+[build.env]
+passthrough=[
+    "FETCH_URL",
+    "DOWNLOAD_DIR"
+]

@@ -8,13 +8,12 @@ use std::path::{Path, PathBuf};
 use base32::Alphabet;
 use futures_util::stream::StreamExt;
 use log::{error, info, trace};
-use openssl::hash::MessageDigest;
 use reqwest::{Client, Response};
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::Sender;
 use url::Url;
 
-use crate::{Error, FileInfo, hash_file, Info, scan_dir};
+use crate::{convert_hash_algorithm, Error, FileInfo, hash_file, Info, scan_dir};
 
 #[derive(Debug)]
 /// Messages sent from the update task
@@ -145,10 +144,10 @@ async fn generate_download_request<'r>(client: &Client, info: &Info, file_info: 
     let path = dl_dir.join(&file_info.path);
 
     if !path.exists() || {
-        let local_hash = hash_file(&path, MessageDigest::from_name(info.algorithm.as_str()).ok_or(Error::Other(format!("Could not parse hash algorithm '{}'", info.algorithm)))?)?;
+        let local_hash = hash_file(&path, convert_hash_algorithm(info.algorithm.as_str()).expect(format!("Unknown algorithm: {}", info.algorithm).as_str()))?;
         let remote_hash = base32::decode(Alphabet::Crockford, file_info.hash.as_str()).ok_or_else(|| Error::Other("Could not parse hash".to_string()))?;
 
-        *local_hash != *remote_hash
+        *local_hash.as_ref() != *remote_hash
     } {
         let res = client
             .get(url)

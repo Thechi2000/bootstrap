@@ -5,7 +5,6 @@ use crate::updater::Message;
 pub enum Error{
     IO(std::io::Error),
     Path(std::path::StripPrefixError),
-    Hash(openssl::error::ErrorStack),
     Url(url::ParseError),
     Utf8(std::str::Utf8Error),
     Json(serde_json::Error),
@@ -53,12 +52,6 @@ impl From<url::ParseError> for Error{
 impl From<std::io::Error> for Error{
     fn from(err: std::io::Error)-> Self{
         Error::IO(err)
-    }
-}
-
-impl From<openssl::error::ErrorStack> for Error{
-    fn from(err: openssl::error::ErrorStack) -> Self{
-        Error::Hash(err)
     }
 }
 

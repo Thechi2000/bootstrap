@@ -3,11 +3,10 @@ extern crate rocket;
 
 use std::path::{Path, PathBuf};
 
-use openssl::hash::MessageDigest;
 use rocket::fs::{NamedFile, relative};
 use rocket::serde::json::Json;
 
-use bootstrap::{Error, FileInfo, hash_file, Info, scan_dir};
+use bootstrap::{convert_hash_algorithm, Error, FileInfo, hash_file, Info, scan_dir};
 
 pub fn hash_algorithm() -> &'static str {
     option_env!("HASH_ALGORITHM").unwrap_or("sha256")
@@ -22,7 +21,7 @@ pub fn generate_info(path_base: &str) -> Result<Info, Error> {
             .map(|file_path|
                 Ok(FileInfo {
                     path: String::from(file_path.clone().strip_prefix(path_base)?.to_str().ok_or(Error::Other("Could not compute file path".to_string()))?),
-                    hash: base32::encode(base32::Alphabet::Crockford, &*hash_file(&file_path, MessageDigest::from_name(hash_algorithm()).expect("Invalid hash algorithm name"))?),
+                    hash: base32::encode(base32::Alphabet::Crockford, hash_file(&file_path, convert_hash_algorithm(hash_algorithm()).expect(format!("Unknown algorithm: {}", hash_algorithm()).as_str()))?.as_ref()),
                 }))
             .collect::<Result<Vec<FileInfo>, Error>>()?,
     })

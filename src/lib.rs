@@ -1,14 +1,13 @@
-use std::fmt::format;
+use std::fs;
 use std::fs::File;
-use std::{fs, io};
+use std::io::Read;
 use std::path::{Path, PathBuf};
-use chrono::{SecondsFormat, Utc};
 
+use chrono::{SecondsFormat, Utc};
 use log::{LevelFilter, SetLoggerError};
-use openssl::hash::{DigestBytes, Hasher, MessageDigest};
+use ring::digest::{Algorithm, Context, Digest, SHA256, SHA384, SHA512, SHA512_256};
 use serde::{Deserialize, Serialize};
 use simplelog::{ColorChoice, CombinedLogger, Config, TerminalMode, TermLogger, WriteLogger};
-use tokio::time::Instant;
 
 pub use error::Error;
 
@@ -39,11 +38,20 @@ pub struct Info {
 /// # Arguments
 /// * 'path' - The path of the file to hash
 /// * 'digest' - The hash algorithm to use
-pub fn hash_file(path: &PathBuf, digest: MessageDigest) -> Result<DigestBytes, Error> {
-    let mut hasher = Hasher::new(digest)?;
+pub fn hash_file(path: &PathBuf, algo: &'static Algorithm) -> Result<Digest, Error> {
     let mut file = File::open(path)?;
-    io::copy(&mut file, &mut hasher)?;
-    hasher.finish().map_err(Error::from)
+    let mut context = Context::new(algo);
+    let mut buffer = [0; 1024];
+
+    loop {
+        let count = file.read(&mut buffer)?;
+        if count == 0 {
+            break;
+        }
+        context.update(&buffer[..count]);
+    }
+
+    Ok(context.finish())
 }
 
 pub fn scan_dir(path: PathBuf) -> Result<Vec<PathBuf>, Error> {
@@ -62,10 +70,12 @@ pub fn scan_dir(path: PathBuf) -> Result<Vec<PathBuf>, Error> {
 }
 
 pub fn init_logger() -> Result<(), SetLoggerError> {
-    let dir  =Path::new("./logs/");
+    let dir = Path::new("./logs/");
     if !dir.exists() {
         fs::create_dir(dir).expect("Could not create log dir");
     }
+
+    let log_filename = format!("./logs/{}.log", Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true)).replace(":", "_");
 
     CombinedLogger::init(vec![
         TermLogger::new(
@@ -82,7 +92,17 @@ pub fn init_logger() -> Result<(), SetLoggerError> {
         WriteLogger::new(
             LevelFilter::Trace,
             Config::default(),
-            File::create(format!("./logs/{}.log", Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true))).expect("Could not create log file"),
+            File::create(&log_filename).expect(log_filename.as_str()),
         ),
     ])
+}
+
+pub fn convert_hash_algorithm(name: &str) -> Option<&'static Algorithm>{
+    match name.to_lowercase().as_str(){
+        "sha256" => Some(&SHA256),
+        "sha384" => Some(&SHA384),
+        "sha512" => Some(&SHA512),
+        "sha512_256" => Some(&SHA512_256),
+        _ => None,
+    }
 }
