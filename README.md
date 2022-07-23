@@ -20,6 +20,9 @@ It expects to receive a json formatted as follows:
         }] - Array containing the informations for each file of the application
     }
 ```
+<p>
+Available hash algorithm are SHA256, SHA384, SHA512, SHA512_256
+</p>
 </p>
 <p>
 Then, it computes the checksum of all files in the working directory and compare it to the one received, and updates the file if it differs. If the file is not referenced in the json, it is deleted.
