@@ -92,15 +92,15 @@ impl DownloadStateHandle {
 /// Starts the update of the current directory
 /// # Argument
 /// * 'sender' - A mpsc sender to transmit messages about the update
-pub async fn update(sender: Sender<Message>) {
-    async fn try_update(sender: Sender<Message>) -> Result<(), Error> {
-        info!("Fetching json from {}", env!("FETCH_URL"));
+pub async fn update(sender: Sender<Message>, fetch_url: String, download_dir: String) {
+    async fn try_update(sender: Sender<Message>, fetch_url: &str, download_dir: &str) -> Result<(), Error> {
+        info!("Fetching json from {}", fetch_url);
 
         let client = Client::new();
-        let info: Info = client.get(env!("FETCH_URL")).send().await?.json::<Info>().await?;
+        let info: Info = client.get(fetch_url).send().await?.json::<Info>().await?;
         let mut requests = Vec::new();
         let mut i = 0;
-        let dl_dir = Path::new(option_env!("DOWNLOAD_DIR").or(Some("./")).unwrap()).to_path_buf();
+        let dl_dir = Path::new(download_dir).to_path_buf();
         let required_files: BTreeSet<PathBuf> = info.files.iter().map(|fi| dl_dir.join(&fi.path)).collect();
 
         for file_info in &info.files {
@@ -133,7 +133,7 @@ pub async fn update(sender: Sender<Message>) {
         Ok(())
     }
 
-    if let Err(e) = try_update(sender.clone()).await {
+    if let Err(e) = try_update(sender.clone(), &fetch_url, &download_dir).await {
         error!("Download interrupted by {:#?}", e);
         sender.send(Message::Interrupted(Box::new(e))).await.unwrap();
     }

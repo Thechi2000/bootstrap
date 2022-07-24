@@ -23,7 +23,6 @@ It expects to receive a json formatted as follows:
 <p>
 Available hash algorithm are SHA256, SHA384, SHA512, SHA512_256
 </p>
-</p>
 <p>
 Then, it computes the checksum of all files in the working directory and compare it to the one received, and updates the file if it differs. If the file is not referenced in the json, it is deleted.
 The downloaded file url are computed by merging <strong>base_url</strong> and <strong>path</strong>.
@@ -41,3 +40,12 @@ The following environment are needed at compile time:
 <li><strong>FETCH_URL</strong>: Url where to fetch the json</li>
 <li><strong>EXECUTABLE_NAME</strong>: Name of the executable of the application, started after update</li>
 </ul>
+<h2>Arguments</h2>
+<p>
+Several argument can be given at runtime:
+<ul>
+<li>--fetch: Override FETCH_URL</li>
+<li>--dir: Override DOWNLOAD_DIR</li>
+<li>--no_gui: </li>
+</ul>
+</p>
