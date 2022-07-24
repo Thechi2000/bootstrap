@@ -1,14 +1,13 @@
+use base32::Alphabet;
+use futures_util::stream::StreamExt;
+use log::{error, info, trace};
+use reqwest::{Client, Response};
 use std::cmp::min;
 use std::collections::BTreeSet;
 use std::fs;
 use std::fs::{create_dir_all, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-
-use base32::Alphabet;
-use futures_util::stream::StreamExt;
-use log::{error, info, trace};
-use reqwest::{Client, Response};
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::Sender;
 use url::Url;
@@ -104,16 +103,18 @@ pub async fn update(sender: Sender<Message>, fetch_url: String, download_dir: St
         let required_files: BTreeSet<PathBuf> = info.files.iter().map(|fi| dl_dir.join(&fi.path)).collect();
 
         for file_info in &info.files {
-            if let Some(request) = generate_download_request(&client, &info, file_info, i, sender.clone(), &dl_dir).await? {
-                trace!("Registering update request for {}", file_info.path);
-                requests.push(request);
-                i += 1;
+            if !info.ignored_files.iter().filter(|d| file_info.path.starts_with(d.to_str().unwrap())).count() == 0 {
+                if let Some(request) = generate_download_request(&client, &info, file_info, i, sender.clone(), &dl_dir).await? {
+                    trace!("Registering update request for {}", file_info.path);
+                    requests.push(request);
+                    i += 1;
+                }
             }
         }
         sender.send(Message::FetchDone).await?;
 
         info!("Cleaning directory");
-        for file in scan_dir(dl_dir)? {
+        for file in scan_dir(dl_dir, &info.ignored_files)? {
             if !required_files.contains(&file) {
                 trace!("Removing file {}", file.display());
                 fs::remove_file(file)?;

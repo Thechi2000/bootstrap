@@ -14,10 +14,14 @@ It expects to receive a json formatted as follows:
     {
         base_url: String - Url of the root of the application
         algorithm: String - Name of the algorithm to checksum the files
-        [{
-            path: String - Path of the file (relative to the root of the application
-            hash: String - Checksum of the file (Crockford Base32 Encoding)
-        }] - Array containing the informations for each file of the application
+        files: FileInfo[] - Array containing the informations for each file of the application
+        ignored_files: String[] - List of files/dirs that won't be modified during the update
+    }
+    
+    FileInfo:
+    {
+        path: String - Path of the file (relative to the root of the application
+        hash: String - Checksum of the file (Crockford Base32 Encoding)
     }
 ```
 <p>

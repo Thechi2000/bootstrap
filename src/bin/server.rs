@@ -16,7 +16,7 @@ pub fn generate_info(path_base: &str) -> Result<Info, Error> {
     Ok(Info {
         base_url: "http://localhost:8000/files/".to_string(),
         algorithm: hash_algorithm().to_string(),
-        files: scan_dir(PathBuf::from(path_base))?
+        files: scan_dir(PathBuf::from(path_base), &vec![])?
             .into_iter()
             .map(|file_path|
                 Ok(FileInfo {
@@ -24,6 +24,7 @@ pub fn generate_info(path_base: &str) -> Result<Info, Error> {
                     hash: base32::encode(base32::Alphabet::Crockford, hash_file(&file_path, convert_hash_algorithm(hash_algorithm()).expect(format!("Unknown algorithm: {}", hash_algorithm()).as_str()))?.as_ref()),
                 }))
             .collect::<Result<Vec<FileInfo>, Error>>()?,
+        ignored_files: vec![]
     })
 }
 

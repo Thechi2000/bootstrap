@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::fs;
 use std::fs::File;
 use std::io::Read;
@@ -32,6 +33,8 @@ pub struct Info {
     pub algorithm: String,
     /// Vector of the file info of all files
     pub files: Vec<FileInfo>,
+    /// Vector of all the files/dirs that won't be modified
+    pub ignored_files: Vec<PathBuf>,
 }
 
 /// Compute the hash of a file
@@ -54,11 +57,13 @@ pub fn hash_file(path: &PathBuf, algo: &'static Algorithm) -> Result<Digest, Err
     Ok(context.finish())
 }
 
-pub fn scan_dir(path: PathBuf) -> Result<Vec<PathBuf>, Error> {
-    if path.is_dir() {
+pub fn scan_dir(path: PathBuf, ignored: &Vec<PathBuf>) -> Result<Vec<PathBuf>, Error> {
+    if ignored.contains(&path) {
+        Ok(Vec::new())
+    } else if path.is_dir() {
         path.read_dir()?
             .map(|d|
-                scan_dir(d.map_err(|_| Error::Other("".to_string()))?.path()))
+                scan_dir(d.map_err(|_| Error::Other("".to_string()))?.path(), ignored))
             .collect::<Result<Vec<Vec<PathBuf>>, Error>>()
             .map(|v|
                 v.into_iter()
@@ -92,13 +97,13 @@ pub fn init_logger() -> Result<(), SetLoggerError> {
         WriteLogger::new(
             LevelFilter::Trace,
             Config::default(),
-            File::create(&log_filename).expect(log_filename.as_str()),
+            File::create(&log_filename).unwrap_or_else(|_| { panic!("{}", log_filename) }),
         ),
     ])
 }
 
-pub fn convert_hash_algorithm(name: &str) -> Option<&'static Algorithm>{
-    match name.to_lowercase().as_str(){
+pub fn convert_hash_algorithm(name: &str) -> Option<&'static Algorithm> {
+    match name.to_lowercase().as_str() {
         "sha256" => Some(&SHA256),
         "sha384" => Some(&SHA384),
         "sha512" => Some(&SHA512),
