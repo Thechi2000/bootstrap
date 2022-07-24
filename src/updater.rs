@@ -103,7 +103,8 @@ pub async fn update(sender: Sender<Message>, fetch_url: String, download_dir: St
         let required_files: BTreeSet<PathBuf> = info.files.iter().map(|fi| dl_dir.join(&fi.path)).collect();
 
         for file_info in &info.files {
-            if !info.ignored_files.iter().filter(|d| file_info.path.starts_with(d.to_str().unwrap())).count() == 0 {
+            trace!("Checking {}", file_info.path);
+            if info.ignored_files.iter().filter(|d| file_info.path.starts_with(d.to_str().unwrap())).count() == 0 {
                 if let Some(request) = generate_download_request(&client, &info, file_info, i, sender.clone(), &dl_dir).await? {
                     trace!("Registering update request for {}", file_info.path);
                     requests.push(request);
@@ -114,8 +115,8 @@ pub async fn update(sender: Sender<Message>, fetch_url: String, download_dir: St
         sender.send(Message::FetchDone).await?;
 
         info!("Cleaning directory");
-        for file in scan_dir(dl_dir, &info.ignored_files)? {
-            if !required_files.contains(&file) {
+        for file in scan_dir(dl_dir.clone(), &info.ignored_files)? {
+            if !required_files.contains(&file) && info.ignored_files.iter().filter(|d| file.starts_with(dl_dir.join(&d).to_str().unwrap())).count() == 0 {
                 trace!("Removing file {}", file.display());
                 fs::remove_file(file)?;
             }

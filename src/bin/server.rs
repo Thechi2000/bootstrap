@@ -13,10 +13,11 @@ pub fn hash_algorithm() -> &'static str {
 }
 
 pub fn generate_info(path_base: &str) -> Result<Info, Error> {
+    let ignored = vec![PathBuf::from("empty"), PathBuf::from("ignored/")];
     Ok(Info {
         base_url: "http://localhost:8000/files/".to_string(),
         algorithm: hash_algorithm().to_string(),
-        files: scan_dir(PathBuf::from(path_base), &vec![])?
+        files: scan_dir(PathBuf::from(path_base), &ignored.iter().map(|p| PathBuf::from(path_base).join(p)).collect())?
             .into_iter()
             .map(|file_path|
                 Ok(FileInfo {
@@ -24,7 +25,7 @@ pub fn generate_info(path_base: &str) -> Result<Info, Error> {
                     hash: base32::encode(base32::Alphabet::Crockford, hash_file(&file_path, convert_hash_algorithm(hash_algorithm()).expect(format!("Unknown algorithm: {}", hash_algorithm()).as_str()))?.as_ref()),
                 }))
             .collect::<Result<Vec<FileInfo>, Error>>()?,
-        ignored_files: vec![]
+        ignored_files: ignored,
     })
 }
 
