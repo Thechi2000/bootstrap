@@ -145,12 +145,12 @@ async fn generate_download_request<'r>(client: &Client, info: &Info, file_info: 
     let url = Url::parse(info.base_url.as_str())?.join(&file_info.path)?;
     let path = dl_dir.join(&file_info.path);
 
-    if !path.exists() || {
+    if !path.exists() || (!file_info.placeholder && {
         let local_hash = hash_file(&path, convert_hash_algorithm(info.algorithm.as_str()).expect(format!("Unknown algorithm: {}", info.algorithm).as_str()))?;
         let remote_hash = base32::decode(Alphabet::Crockford, file_info.hash.as_str()).ok_or_else(|| Error::Other("Could not parse hash".to_string()))?;
 
         *local_hash.as_ref() != *remote_hash
-    } {
+    }) {
         let res = client
             .get(url)
             .send()

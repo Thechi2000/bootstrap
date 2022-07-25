@@ -21,6 +21,8 @@ pub struct FileInfo {
     pub path: String,
     /// The hash of the file (using Crockford representation)
     pub hash: String,
+    /// A placeholder file will never be overwritten, only downloaded when absent
+    pub placeholder: bool,
 }
 
 #[derive(Serialize, Deserialize)]

@@ -23,6 +23,7 @@ pub fn generate_info(path_base: &str) -> Result<Info, Error> {
                 Ok(FileInfo {
                     path: String::from(file_path.clone().strip_prefix(path_base)?.to_str().ok_or(Error::Other("Could not compute file path".to_string()))?),
                     hash: base32::encode(base32::Alphabet::Crockford, hash_file(&file_path, convert_hash_algorithm(hash_algorithm()).expect(format!("Unknown algorithm: {}", hash_algorithm()).as_str()))?.as_ref()),
+                    placeholder: false
                 }))
             .collect::<Result<Vec<FileInfo>, Error>>()?,
         ignored_files: ignored,

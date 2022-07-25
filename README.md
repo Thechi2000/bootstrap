@@ -22,6 +22,7 @@ It expects to receive a json formatted as follows:
     {
         path: String - Path of the file (relative to the root of the application
         hash: String - Checksum of the file (Crockford Base32 Encoding)
+        placeholder: bool - A placeholder file will never be overwritten, only downloaded when absent
     }
 ```
 <p>
