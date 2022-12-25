@@ -17,8 +17,8 @@ use crate::{convert_hash_algorithm, Error, FileInfo, hash_file, Info, scan_dir};
 #[derive(Debug)]
 /// Messages sent from the update task
 pub enum Message {
-    /// (id, total_size) Created a new download state
-    AddState(u32, u64),
+    /// (id, total_size, path) Created a new download state
+    AddState(u32, u64, Option<String>),
     /// (id, done) Updated download with done bytes downloaded
     UpdateState(u32, u64),
 
@@ -69,8 +69,8 @@ struct DownloadStateHandle {
 }
 
 impl DownloadStateHandle {
-    async fn new(id: u32, sender: Sender<Message>, total_size: u64) -> Result<DownloadStateHandle, SendError<Message>> {
-        sender.send(Message::AddState(id, total_size)).await?;
+    async fn new(id: u32, sender: Sender<Message>, total_size: u64, name: Option<String>) -> Result<DownloadStateHandle, SendError<Message>> {
+        sender.send(Message::AddState(id, total_size, name)).await?;
         Ok(Self {
             id,
             sender,
@@ -159,7 +159,7 @@ async fn generate_download_request<'r>(client: &Client, info: &Info, file_info: 
             .content_length()
             .ok_or_else(|| "Failed to get content length".to_string())?;
 
-        let state = DownloadStateHandle::new(id, sender, total_size).await?;
+        let state = DownloadStateHandle::new(id, sender, total_size, path.to_str().map(|s| s.to_owned())).await?;
         Ok(Some((res, state, path)))
     } else {
         Ok(None)

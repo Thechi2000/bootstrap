@@ -56,7 +56,7 @@ async fn main() {
             let result = rx.try_recv();
             match result {
                 Ok(msg) => match msg {
-                    Message::AddState(id, size) => {
+                    Message::AddState(id, size, _) => {
                         map.insert(id, DownloadState::new(size));
                     }
                     Message::UpdateState(id, done) => {
@@ -82,7 +82,7 @@ async fn main() {
         loop {
             match rx.try_recv() {
                 Ok(msg) => match msg {
-                    Message::AddState(id, size) => {
+                    Message::AddState(id, size, _) => {
                         map.insert(id, DownloadState::new(size));
                     }
                     Message::UpdateState(id, done) => {
